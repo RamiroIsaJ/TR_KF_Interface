@@ -314,7 +314,7 @@ while True:
     if event == '_GRA_':
         print('GRAPHICS')
         if len(tot_dist) > 1:
-            tot_dist = np.array(tot_dist[1:])
+            tot_dist = np.array(tot_dist[2:])
             max_dist = np.round(np.max(tot_dist[:]), 4)
             window['_MMD_'].update(max_dist)
             list_val = list(map(str, np.arange(1, tot_dist.shape[1])))
