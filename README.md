@@ -15,3 +15,5 @@ Results of whole set of features traked are presented in 2 graphics which are re
 Error is the measure of Kalman filter for detection process.
 
 ![image info](./src/ima2.png)
+
+TR_KF Interface will be presented in a **scientific paper** in the next months.
