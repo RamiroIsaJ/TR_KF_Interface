@@ -1,8 +1,9 @@
 # Ramiro Isa-Jara, ramiro.isaj@gmail.com
+# Interface for tracking features from image sequences
 
 import PySimpleGUI as sg
 import numpy as np
-import Trk_def as Chg
+import Chagas_def as Chg
 from datetime import datetime
 from Tracker_def import Tracker
 import matplotlib.pyplot as plt
@@ -61,8 +62,8 @@ particles = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 layout9 = [[sg.Text('Graphics: ', size=(13, 1)),
             sg.Combo(values=particles, size=(10, 1), enable_events=True, key='_GRA_')],
            [sg.Text('Mean_RMSE:', size=(13, 1)), sg.InputText('', key='_MER_', size=(12, 1))],
-           [sg.Text('Mean_Distance:', size=(13, 1)), sg.InputText('', key='_MDI_', size=(12, 1))],
-           [sg.Text('Mean_Velocity:', size=(13, 1)), sg.InputText('', key='_MVL_', size=(12, 1))],
+           [sg.Text('Total_Distance:', size=(13, 1), text_color='red'), sg.InputText('', key='_MDI_', size=(12, 1))],
+           [sg.Text('Mean_Velocity:', size=(13, 1), text_color='red'), sg.InputText('', key='_MVL_', size=(12, 1))],
            [sg.Text('Max_Distance:', size=(13, 1)), sg.InputText('', key='_MMD_', size=(12, 1))]]
 
 v_image = [sg.Image(filename='', key="_IMA_")]
@@ -271,17 +272,19 @@ while True:
             tot_dist.append(np.array(dists))
             mean_dist.append(mean_d)
             window['_MER_'].update(np.round(error, 4))
+            '''
             window['_MDI_'].update(mean_d)
             mean_vel = np.round(mean_d / delta, 4)
             window['_MVL_'].update(mean_vel)
+            '''
 
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
 
     if track_press:
         print('TRACK RESULTS')
         n_errors = np.array(rms_errors)
-        m_dist = np.cumsum(np.array(mean_dist[2:]))
-        m_velocity = (np.array(mean_dist[2:])) / delta
+        m_dist = np.cumsum(np.array(mean_dist[2:]))  # change 1 by 2
+        m_velocity = (np.array(mean_dist[2:])) / delta  # change 1 by 2
         window['_MER_'].update(np.round(np.mean(n_errors), 4))
         window['_MES_'].update('Tracking successfully')
 
@@ -307,14 +310,19 @@ while True:
         ax3.legend(loc='upper right')
         ax3.grid()
         fin_time = now.strftime("%H : %M : %S")
+        # total distance
         window['_TFI_'].update(fin_time)
+        window['_MDI_'].update(np.round(m_dist[-1], 4))
+        # global mean velocity
+        mean_vel_f = np.round(np.average(m_velocity), 4)
+        window['_MVL_'].update(mean_vel_f)
         plt.show()
         track_press, finish_ = False, True
 
     if event == '_GRA_':
         print('GRAPHICS')
         if len(tot_dist) > 1:
-            tot_dist = np.array(tot_dist[2:])
+            tot_dist = np.array(tot_dist[2:])  # change 1 by 2
             max_dist = np.round(np.max(tot_dist[:]), 4)
             window['_MMD_'].update(max_dist)
             list_val = list(map(str, np.arange(1, tot_dist.shape[1])))
