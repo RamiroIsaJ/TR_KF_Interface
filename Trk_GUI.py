@@ -55,8 +55,11 @@ layout8 = [[sg.Text('N_Feat_D:', size=(12, 1)), sg.InputText('', key='_NFD_', si
             sg.Text('%Mean_Rep: ', size=(12, 1)), sg.InputText('', key='_RPM_', size=(6, 1))],
            [sg.Text('Max_Feat_D:', size=(12, 1)), sg.InputText('', key='_MFD_', size=(6, 1)),
             sg.Text('Max_Feat_T:', size=(12, 1)), sg.InputText('', key='_MFT_', size=(6, 1))],
+           [sg.Text('--------------------', size=(20, 1))],
            [sg.Text('Mean_Feat_D:', size=(12, 1)), sg.InputText('', key='_PFD_', size=(6, 1)),
-            sg.Text('Mean_Feat_T:', size=(12, 1)), sg.InputText('', key='_PFT_', size=(6, 1))]]
+            sg.Text('Mean_Feat_T:', size=(12, 1)), sg.InputText('', key='_PFT_', size=(6, 1))],
+           [sg.Text('STD_Feat_D:', size=(12, 1)), sg.InputText('', key='_SFD_', size=(6, 1)),
+            sg.Text('STD_Feat_T:', size=(12, 1)), sg.InputText('', key='_SFT_', size=(6, 1))],]
 
 particles = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 layout9 = [[sg.Text('Graphics: ', size=(13, 1)),
@@ -216,11 +219,14 @@ while True:
         rep_ = (tr_feat / n_feat) * 100
         max_n, max_tr = np.max(n_feat[1:]), np.max(tr_feat[1:])
         mean_n, mean_tr = np.round(np.mean(n_feat[1:])), np.round(np.mean(tr_feat[1:]))
+        std_n, std_tr = np.round(np.std(n_feat[1:]), 2), np.round(np.std(tr_feat[1:]), 2)
         rep_p = np.round(np.mean(tr_feat / n_feat) * 100, 1)
         window['_MFD_'].update(max_n)
         window['_MFT_'].update(max_tr)
         window['_PFD_'].update(mean_n)
         window['_PFT_'].update(mean_tr)
+        window['_SFD_'].update(std_n)
+        window['_SFT_'].update(std_tr)
         window['_RPM_'].update(rep_p)
 
         f, (ax1, ax2) = plt.subplots(1, 2)
