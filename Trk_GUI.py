@@ -215,7 +215,7 @@ while True:
         n_feat, tr_feat = np.array(n_features), np.array(tr_features)
         rep_ = (tr_feat / n_feat) * 100
         max_n, max_tr = np.max(n_feat[1:]), np.max(tr_feat[1:])
-        mean_n, mean_tr = np.round(np.mean(n_feat[1:]), 1), np.round(np.mean(tr_feat[1:]), 1)
+        mean_n, mean_tr = np.round(np.mean(n_feat[1:])), np.round(np.mean(tr_feat[1:]))
         rep_p = np.round(np.mean(tr_feat / n_feat) * 100, 1)
         window['_MFD_'].update(max_n)
         window['_MFT_'].update(max_tr)
