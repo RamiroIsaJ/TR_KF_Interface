@@ -4,11 +4,47 @@ import glob
 import math
 
 
+def f_sorted(files_, id_sys):
+    symbol = '\\' if id_sys == 0 else '/'
+    ids = []
+    for f in files_:
+        parts = f.split(symbol)
+        name_i = parts[len(parts) - 1]
+        ids.append(name_i.split('.')[0].split('_')[-1])
+    ids = list(map(int, ids))
+    ids.sort(key=int)
+    file_r = []
+    for i in range(len(files_)):
+        parts = files_[i].split(symbol)
+        name = parts[len(parts) - 1].split('.')
+        exp = name[0].split('_')
+        if len(exp) >= 2:
+            n_exp = exp[0]
+            for j in range(1, len(exp)-1):
+                n_exp += '_' + exp[j]
+            n_name = n_exp + '_' + str(ids[i]) + '.' + name[1]
+        else:
+            n_name = str(ids[i]) + '.' + name[1]
+
+        if id_sys == 0:
+            n_file = parts[0]
+        else:
+            n_file = (symbol + parts[0])
+        for j in range(1, len(parts)-1):
+            n_file += (parts[j] + symbol)
+        n_file += n_name
+        file_r.append(n_file)
+
+    return file_r
+
+
 def load_image_i(orig, i, type_, filenames, exp, id_sys):
     symbol = '\\' if id_sys == 0 else '/'
     if len(filenames) == 0:
         filenames = [img for img in glob.glob(orig+type_)]
-        filenames.sort()
+        # filenames.sort()
+        filenames = f_sorted(filenames, id_sys)
+        
     if i < len(filenames):
         name = filenames[i]
         parts = name.split(symbol)
