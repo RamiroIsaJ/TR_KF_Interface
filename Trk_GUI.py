@@ -56,7 +56,7 @@ layout8 = [[sg.Text('N_Feat_D:', size=(12, 1)), sg.InputText('', key='_NFD_', si
            [sg.Text('Max_Feat_D:', size=(12, 1)), sg.InputText('', key='_MFD_', size=(6, 1)),
             sg.Text('Max_Feat_T:', size=(12, 1)), sg.InputText('', key='_MFT_', size=(6, 1))],
            [sg.Text('Mean_Feat_D:', size=(12, 1)), sg.InputText('', key='_PFD_', size=(6, 1)),
-            sg.Text('Mean_Feat_F:', size=(12, 1)), sg.InputText('', key='_PFT_', size=(6, 1))]]
+            sg.Text('Mean_Feat_T:', size=(12, 1)), sg.InputText('', key='_PFT_', size=(6, 1))]]
 
 particles = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 layout9 = [[sg.Text('Graphics: ', size=(13, 1)),
@@ -266,6 +266,7 @@ while True:
         tab_features = Chg.find_track_feat(i, features_, tab_features, d_max, d_min)
         if i > 10:
             print('this......' + str(tab_features.shape[0]))
+                      
             feat_tracking = tab_features[ini_feat:fin_feat, 2:4]
             ima_out, error, dists, mean_d = Chg.tracking_feat(image, tracker, feat_tracking, delta)
             rms_errors.append(error)
