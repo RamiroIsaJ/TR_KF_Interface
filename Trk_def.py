@@ -11,8 +11,8 @@ def f_sorted(files_, id_sys):
         parts = f.split(symbol)
         name_i = parts[len(parts) - 1]
         ids.append(name_i.split('.')[0].split('_')[-1])
-    ids = list(map(int, ids))
-    ids.sort(key=int)
+    ids = list(map(str, ids))
+    ids.sort(key=str)
     file_r = []
     for i in range(len(files_)):
         parts = files_[i].split(symbol)
