@@ -11,8 +11,14 @@ def f_sorted(files_, id_sys):
         parts = f.split(symbol)
         name_i = parts[len(parts) - 1]
         ids.append(name_i.split('.')[0].split('_')[-1])
-    ids = list(map(str, ids))
-    ids.sort(key=str)
+    ids_1 = list(map(int, ids))
+    idx_1 = int(np.where(np.array(ids_1) == 1)[0])
+    if len(ids[idx_1]) >= 2:
+        ids = list(map(str, ids))
+        ids.sort(key=str)
+    else:
+        ids = list(map(int, ids))
+        ids.sort(key=int)
     file_r = []
     for i in range(len(files_)):
         parts = files_[i].split(symbol)
