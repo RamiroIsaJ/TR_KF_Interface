@@ -33,7 +33,7 @@ def f_sorted(files_, id_sys):
             n_name = str(ids[i]) + '.' + name[1]
 
         if id_sys == 0:
-            n_file = parts[0]
+            n_file = (parts[0] + symbol)
         else:
             n_file = (symbol + parts[0])
         for j in range(1, len(parts)-1):
