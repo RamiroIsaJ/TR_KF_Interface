@@ -3,7 +3,7 @@
 
 import PySimpleGUI as sg
 import numpy as np
-import Chagas_def as Chg
+import Trk_def as Chg
 from datetime import datetime
 from Tracker_def import Tracker
 import matplotlib.pyplot as plt
