@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import glob
 import math
+import os
 
 
 def f_sorted(files_, id_sys):
@@ -40,7 +41,6 @@ def f_sorted(files_, id_sys):
             n_file += (parts[j] + symbol)
         n_file += n_name
         file_r.append(n_file)
-
     return file_r
 
 
@@ -50,7 +50,6 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
         filenames = [img for img in glob.glob(orig+type_)]
         # filenames.sort()
         filenames = f_sorted(filenames, id_sys)
-        
     if i < len(filenames):
         name = filenames[i]
         parts = name.split(symbol)
@@ -59,7 +58,6 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
         image_ = cv2.imread(name)
     else:
         image_, name_i = [], []
-
     return filenames, image_, exp, name_i
 
 
@@ -80,9 +78,7 @@ def preprocessing(img):
     image_gray_ = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     clh = cv2.createCLAHE(clipLimit=5)
     clh_img = clh.apply(image_gray_)
-
     blurred = cv2.GaussianBlur(clh_img, (5, 5), 0)
-
     return clh_img, blurred
 
 
@@ -133,7 +129,6 @@ def sort_features(last_f, curr_f, max_v, min_v):
             last_f[i, 4], last_f[i, 5] = 1, 0
         else:
             last_f[i, 4], last_f[i, 5] = 0, last_f[i, 5] + 1
-
     return np.array(last_f)
 
 
@@ -147,12 +142,11 @@ def find_seq_feat(k, features_, tab_feat, max_v, min_v):
     idx = np.where((tab_feat[:, 4] == 1) & (tab_feat[:, 5] < 5))
     f_track = np.array(tab_feat[idx, :])
     f_track = f_track.reshape((f_track.shape[0] * f_track.shape[1]), f_track.shape[2])
-
     return tab_feat, f_track
 
 
 def find_track_feat(k, features_, tab_feat, max_v, min_v):
-    if k == 0:
+    if k == 0 :
         tab_feat = np.append(features_, features_, axis=1)
         tab_feat = np.append(tab_feat, np.ones((len(features_), 2)), axis=1)
     elif k == 10:
@@ -161,14 +155,12 @@ def find_track_feat(k, features_, tab_feat, max_v, min_v):
         tab_feat = np.delete(tab_feat, idx, 0)
     else:
         tab_feat = sort_features(tab_feat, features_, max_v, min_v)
-
     return tab_feat
 
 
 def tracking_feat(frame, tracker, f_track, delta):
     # update tracker
     tracker.update(f_track, delta)
-
     errors, move_dist = [], [0]
     n = len(tracker.tracks)
     for j in range(n):
@@ -187,6 +179,25 @@ def tracking_feat(frame, tracker, f_track, delta):
         cv2.circle(frame, (int(f_track[j, 0]), int(f_track[j, 1])), 6, (0, 0, 0), -1)
     r_mse = np.round(np.sqrt(np.sum(np.array(errors)) / n), 4)
     r_mse = 100 if r_mse == 0 else r_mse
-    mean_d = np.round(np.mean(np.array(move_dist)), 4)
+    mean_dist = np.round(np.mean(np.array(move_dist)), 4)
+    std_dist = np.round(np.std(np.array(move_dist)), 4)
+    mean_vel = np.round(np.mean(np.array(move_dist) / delta), 4)
+    std_vel = np.round(np.std(np.array(move_dist) / delta), 4)
 
-    return frame, r_mse, move_dist, mean_d
+    return frame, r_mse, move_dist, mean_dist, std_dist, mean_vel, std_vel
+
+
+def save_image_out(ima_out_, path_des_, name_ima):
+    root_ima = os.path.join(path_des_, name_ima+'.jpg')
+    cv2.imwrite(root_ima, ima_out_)
+    print('-------------------------------------')
+    print('..... Image saved successfully .....')
+    print('-------------------------------------')
+
+
+def save_csv_file(results_, path_des_, id_):
+    root_file = os.path.join(path_des_, 'Results_'+str(id_)+'.csv')
+    results_.to_csv(root_file, index=False)
+    print('----------------------------------------------')
+    print('..... Save data in CSV file successfully .....')
+    print('----------------------------------------------')
