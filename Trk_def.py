@@ -3,6 +3,9 @@ import cv2
 import glob
 import math
 import os
+import pandas as pd
+from skimage import morphology
+from skimage.metrics import structural_similarity
 
 
 def f_sorted(files_, id_sys):
@@ -90,14 +93,23 @@ def show_features(img, features_):
     return img
 
 
-def features_img(img, v_th):
+def features_img(img, v_th, ide, difference, ima_res):
     ima_gray, final_ima = preprocessing(img)
-    thresh = cv2.threshold(final_ima, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    binary = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=3)
+    if ide == 0:
+        ima_res, diff = np.copy(ima_gray), np.copy(ima_gray)
+    else:
+        (score, diff) = structural_similarity(ima_res, ima_gray, full=True)
+        difference.append(score)
+        ima_res = np.copy(ima_gray)
+        diff = (diff * 255).astype(np.uint8)
+    thresh = cv2.threshold(diff, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    binary = cv2.morphologyEx(binary, cv2.MORPH_DILATE, kernel, iterations=3)
-    contours = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    binary = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=3)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_DILATE, kernel, iterations=1)
+    arr = binary > 0
+    markers = morphology.remove_small_objects(arr, min_size=50, connectivity=1).astype(np.uint8)
+    markers = markers.astype(np.uint8)
+    contours = cv2.findContours(markers, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]
     features_ = []
     for c in contours:
@@ -105,10 +117,9 @@ def features_img(img, v_th):
         cx = int(mts["m10"] / mts["m00"])
         cy = int(mts["m01"] / mts["m00"])
         features_.append((cx, cy))
-
     features_ = np.asarray(sorted(features_, key=lambda k: [k[0], k[1]]))
     frame = show_features(img, features_)
-    return features_, frame
+    return features_, frame, difference, ima_res
 
 
 def distance(x, y):
@@ -185,6 +196,19 @@ def tracking_feat(frame, tracker, f_track, delta):
     std_vel = np.round(np.std(np.array(move_dist) / delta), 4)
 
     return frame, r_mse, move_dist, mean_dist, std_dist, mean_vel, std_vel
+
+
+def outliers(data):
+    # Median imputation
+    data = pd.DataFrame(data, columns=['Values'])
+    q1, q3 = data['Values'].quantile(0.25), data['Values'].quantile(0.75)
+    iqr = q3 - q1
+    lower_tail, upper_tail = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+    for i in data['Values']:
+        if i > upper_tail or i < lower_tail:
+            data['Values'] = data['Values'].replace(i, np.median(data['Values']))
+
+    return np.round(np.mean(data['Values']), 4), np.round(np.std(data['Values']), 4)
 
 
 def save_image_out(ima_out_, path_des_, name_ima):
