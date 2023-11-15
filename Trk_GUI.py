@@ -26,11 +26,11 @@ layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_")], [sg.Checkbox('*.pn
 
 layout3 = [[sg.Text('Min Thresh:', size=(12, 1)), sg.InputText('90', key='_ITH_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Max-Distance:', size=(12, 1)), sg.InputText('20', key='_MAD_', size=(5, 1))],
+            sg.Text('Max-Distance:', size=(12, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
            [sg.Text('Ini-Feature:', size=(12, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Min-Distance:', size=(12, 1)), sg.InputText('5', key='_MID_', size=(5, 1))],
-           [sg.Text('Fin-Feature:', size=(12, 1)), sg.InputText('100', key='_FNF_', size=(5, 1)),
+            sg.Text('Min-Distance:', size=(12, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
+           [sg.Text('End-Feature:', size=(12, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Delta t:', size=(12, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))]]
 
@@ -65,7 +65,8 @@ layout8 = [[sg.Text('N_Feat_D:', size=(12, 1)), sg.InputText('', key='_NFD_', si
 particles = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 layout9 = [[sg.Text('Graphics: ', size=(13, 1)),
             sg.Combo(values=particles, size=(10, 1), enable_events=True, key='_GRA_')],
-           [sg.Text('Total_Distance:', size=(13, 1)), sg.InputText('', key='_MDI_', size=(12, 1))],
+           [sg.Text('Total_Distance:', size=(13, 1)), sg.InputText('', key='_TDI_', size=(12, 1))],
+           [sg.Text('Mean_Distance:', size=(13, 1)), sg.InputText('', key='_MDI_', size=(12, 1))],
            [sg.Text('STD_Distance:', size=(13, 1)), sg.InputText('', key='_MER_', size=(12, 1))],
            [sg.Text('Mean_Velocity:', size=(13, 1)), sg.InputText('', key='_MVL_', size=(12, 1))],
            [sg.Text('STD_Velocity:', size=(13, 1)), sg.InputText('', key='_MMD_', size=(12, 1))]]
@@ -88,11 +89,16 @@ layout = [[sg.Column(col_1), sg.Column(col_2)]]
 window = sg.Window('TR_KF Interface', layout, font="Helvetica "+str(Screen_size), finalize=True)
 window['_IMA_'].update(data=Chg.bytes_(img, m1, n1))
 # ---------------------------------------------------------------------
-eval_c, finish_, eval_press, track_c, track_press = False, False, False, False, False
+eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, False, False, False, False, False, False
 filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
-tot_dist, mean_dist, path_des = [], [], []
-i, id_sys, tracker, delta = -1, 0, None, 0
-results_t = pd.DataFrame(columns=['Image', 'Distance [px]', 'Error [Dist]', 'Velocity [px/s]', 'Error [Vel]'])
+tot_dist, mean_dist, path_des, difference, ima_diff, score_eval = [], [], [], [], None, 0
+i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat = -1, 0, None, 0, 0, 0, 0, 0, 0
+results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
+                                         'Velocity [px/s]', 'Error [Vel]'])
+results_evaluate = pd.DataFrame(columns=['Mean Feat Detected', 'Error [Mean Feat Detected]',
+                                         'Mean Feat Tracking', 'Error [Mean Feat Tracking]', 'Repeatability'])
+save_parameters = pd.DataFrame(columns=['Min Thresh', 'Min Distance', 'Max Distance',
+                                        'Ini Feature', 'End Feature'])
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
     event, values = window.read(timeout=10)
@@ -104,15 +110,24 @@ while True:
     if event is None or event == sg.WIN_CLOSED:
         break
 
-    if event == 'Finish':
+    if event == 'Finish' or finish_t or finish_e:
         print('FINISH')
-        if finish_ or track_c or eval_c:
+        if finish_e or finish_t or track_c or eval_c:
             window['_IMA_'].update(data=Chg.bytes_(img, m1, n1))
             i, filenames = -1, []
-            if finish_:
-                Chg.save_csv_file(results_t, path_des, 'track')
-                results_t = pd.DataFrame(columns=['Image', 'Distance [px]', 'Error [Dist]', 'Velocity [px/s]', 'Error [Vel]'])
-            finish_, track_c, eval_c = False, False, False
+            if finish_e:
+                Chg.save_csv_file(results_evaluate, path_des, 'evaluate')
+                results_evaluate = pd.DataFrame(columns=['Mean Feat Detected', 'Error [Mean Feat Detected]',
+                                                         'Mean Feat Tracking', 'Error [Mean Feat Tracking]',
+                                                         'Repeatability'])
+            if finish_t:
+                Chg.save_csv_file(results_tracking, path_des, 'tracking')
+                Chg.save_csv_file(save_parameters, path_des, 'parameters')
+                results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
+                                                         'Velocity [px/s]', 'Error [Vel]'])
+                save_parameters = pd.DataFrame(columns=['Min Thresh', 'Min Distance', 'Max Distance',
+                                                        'Ini Feature', 'End Feature'])
+            finish_e, finish_t, track_c, eval_c, crt_set, difference = False, False, False, False, False, []
             tab_features, n_features, tr_features, rms_errors, tot_dist, mean_dist, mean_vel = [], [], [], [], [], [], []
             window['_TIN_'].update('-- : -- : --')
             window['_TFI_'].update('-- : -- : --')
@@ -143,7 +158,7 @@ while True:
         else:
             type_i = "*.jpg"
             # ------------------------------------------------------------------
-        if len(path_org) > 1 and finish_ is False:
+        if len(path_org) > 1 and finish_t is False:
             now_time = now.strftime("%H : %M : %S")
             window['_TIN_'].update(now_time)
             window['_MES_'].update('Evaluate is running')
@@ -174,7 +189,7 @@ while True:
         else:
             type_i = "*.jpg"
         # ------------------------------------------------------------------
-        if len(path_org) > 1 and finish_ is False:
+        if len(path_org) > 1 and finish_e is False:
             now_time = now.strftime("%H : %M : %S")
             window['_TIN_'].update(now_time)
             window['_MES_'].update('Evaluate is running')
@@ -199,10 +214,17 @@ while True:
         window['_NIM_'].update(name)
         window['_CIM_'].update(i)
 
-        features_, ima_out = Chg.features_img(image, v_thresh)
+        # features_, ima_out = Chg.features_img(image, v_thresh)
+        features_, ima_out, difference, ima_diff = Chg.features_img(image, v_thresh, i, difference, ima_diff)
+        if i > 10 and ctr_set is False:
+            difference_ = np.array(difference)
+            score_eval = np.median(difference_)
+            ctr_set = True
+        if i > 10 and ctr_set and score_eval >= 0.80:
+            sg.Popup('Result', ['Parasites have not been found .... '])
+            finish_ = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
         n_features.append(features_.shape[0])
-
         tab_features, feat_track = Chg.find_seq_feat(i, features_, tab_features, d_max, d_min)
         tr_features.append(feat_track.shape[0])
         # Compute % repeatability
@@ -228,6 +250,11 @@ while True:
         window['_SFD_'].update(std_n)
         window['_SFT_'].update(std_tr)
         window['_RPM_'].update(rep_p)
+        # save results
+        new_row_e = pd.DataFrame.from_records([{'Mean Feat Detected': mean_n, 'Error [Mean Feat Detected]': std_n,
+                                                'Mean Feat Tracking': mean_tr, 'Error [Mean Feat Tracking]': std_tr,
+                                                'Repeatability': rep_p}])
+        results_evaluate = pd.concat([results_evaluate, new_row_e], ignore_index=True)
 
         f, (ax1, ax2) = plt.subplots(1, 2)
         ax1.plot(n_feat, 'o-r', label='Feat-detected')
@@ -245,13 +272,13 @@ while True:
         ax2.legend(loc='upper right')
         ax2.grid()
         plt.show()
-        eval_press, finish_ = False, True
+        eval_press, finish_e = False, True
 
     if track_c:
         print('TRACK PROCESS')
         v_thresh = int(values['_ITH_'])
         d_max, d_min = int(values['_MAD_']), int(values['_MID_'])
-        ini_feat, fin_feat = int(values['_INF_']), int(values['_FNF_'])
+        ini_feat, end_feat = int(values['_INF_']), int(values['_FNF_'])
         delta = float(values['_DET_'])
         i += 1
         filenames, image, exp, name = Chg.load_image_i(path_org, i, type_i, filenames, exp, id_sys)
@@ -267,26 +294,37 @@ while True:
         window['_CIM_'].update(i)
         window['_MES_'].update('Tracking is running')
 
-        features_, ima_out = Chg.features_img(image, v_thresh)
+        features_, ima_out, difference, ima_diff = Chg.features_img(image, v_thresh, i, difference, ima_diff)
         tab_features = Chg.find_track_feat(i, features_, tab_features, d_max, d_min)
-        if i > 10:
+        if i > 10 and ctr_set is False:
+            difference_ = np.array(difference)
+            score_eval = np.median(difference_)
+            print(f'----------> score {score_eval}')
+            ctr_set = True
+        if i > 10 and ctr_set and score_eval < 0.80:
             print('this......' + str(tab_features.shape[0]))
-            feat_tracking = tab_features[ini_feat:fin_feat, 2:4]
+            feat_tracking = tab_features[ini_feat:end_feat, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
             rms_errors.append(error)
             tot_dist.append(np.array(dists))
             mean_dist.append(mean_d)
-            new_row = pd.DataFrame.from_records([{'Image': name, 'Distance [px]': mean_d, 'Error [Dist]': std_d,
-                                                  'Velocity [px/s]': mean_v, 'Error [Vel]': std_v}])
-            results_t = pd.concat([results_t, new_row], ignore_index=True)
             Chg.save_image_out(ima_out, path_des, name)
+        elif i > 10 and ctr_set and score_eval >= 0.80:
+            sg.Popup('Result', ['Parasites have not been found .... '])
+            finish_ = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
 
     if track_press:
         print('TRACK RESULTS')
         n_errors = np.array(rms_errors)
-        m_dist = np.cumsum(np.array(mean_dist[2:]))  # change 1 by 2
+        t_dist = np.cumsum(np.array(mean_dist[2:]))  # change 1 by 2
+        total_dist_g = np.round(t_dist[-1], 4)
         d_std = np.std(np.array(mean_dist[2:]))
+        m_dist = np.mean(np.array(mean_dist[2:]))
+        print(f'mean distance: {m_dist}')
+        mean_dist_model, std_dist_model = Chg.outliers(np.array(mean_dist[2:]))
+        # print(f'mean dist model: {mean_dist_model} ---- std dist model: {std_dist_model}')
+
         m_velocity = (np.array(mean_dist[2:])) / delta  # change 1 by 2
         v_std = np.std(m_velocity)
         window['_MER_'].update(np.round(np.mean(n_errors), 4))
@@ -300,7 +338,7 @@ while True:
         ax1.legend(loc='upper right')
         ax1.grid()
 
-        ax2.plot(m_dist, 'o-g', label='Mean_distance')
+        ax2.plot(t_dist, 'o-g', label='Mean_distance')
         ax2.set_title('Mean of Distance tracking')
         ax2.set_xlabel('Number of frames')
         ax2.set_ylabel('Distance by frame (px.)')
@@ -316,14 +354,24 @@ while True:
         fin_time = now.strftime("%H : %M : %S")
         # total distance
         window['_TFI_'].update(fin_time)
-        window['_MDI_'].update(np.round(m_dist[-1], 4))
-        window['_MER_'].update(np.round(d_std, 4))
+        window['_TDI_'].update(total_dist_g)
+        window['_MDI_'].update(mean_dist_model)
+        window['_MER_'].update(std_dist_model)
         # global mean velocity
         mean_vel_f = np.round(np.average(m_velocity), 4)
-        window['_MVL_'].update(mean_vel_f)
-        window['_MMD_'].update(np.round(v_std, 4))
+        mean_velo_model, std_velo_model = Chg.outliers(m_velocity)
+        window['_MVL_'].update(mean_velo_model)
+        window['_MMD_'].update(std_velo_model)
+        # save results
+        new_row_t = pd.DataFrame.from_records([{'Total Distance [px]': total_dist_g, 'Mean Distance [px]': mean_dist_model,
+                                                'Error [Dist]': std_dist_model, 'Velocity [px/s]': mean_velo_model,
+                                                'Error [Vel]': std_velo_model}])
+        results_tracking = pd.concat([results_tracking, new_row_t], ignore_index=True)
+        new_row_p = pd.DataFrame.from_records([{'Min Thresh': v_thresh, 'Min Distance': d_min, 'Max Distance': d_max,
+                                                'Ini Feature': ini_feat, 'End Feature': end_feat}])
+        save_parameters = pd.concat([save_parameters, new_row_p], ignore_index=True)
         plt.show()
-        track_press, finish_ = False, True
+        track_press, finish_t = False, True
 
     if event == '_GRA_':
         print('GRAPHICS')
