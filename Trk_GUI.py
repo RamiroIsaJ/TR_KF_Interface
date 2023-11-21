@@ -24,7 +24,7 @@ layout1 = [[sg.Radio('Windows', "RADIO1", enable_events=True, default=True, key=
 layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_")], [sg.Checkbox('*.png', default=False, key="_IN2_")],
            [sg.Checkbox('*.tiff', default=False, key="_IN3_")]]
 
-layout3 = [[sg.Text('Min Thresh:', size=(12, 1)), sg.InputText('90', key='_ITH_', size=(5, 1)),
+layout3 = [[sg.Text('Min Thresh:', size=(12, 1)), sg.InputText('100', key='_ITH_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Max-Distance:', size=(12, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
            [sg.Text('Ini-Feature:', size=(12, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
@@ -91,8 +91,8 @@ window['_IMA_'].update(data=Chg.bytes_(img, m1, n1))
 # ---------------------------------------------------------------------
 eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, False, False, False, False, False, False
 filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
-tot_dist, mean_dist, path_des, difference, ima_diff, score_eval = [], [], [], [], None, 0
-i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat = -1, 0, None, 0, 0, 0, 0, 0, 0
+tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation = [], [], [], [], None, 0, []
+i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat, diff_eval = -1, 0, None, 0, 0, 0, 0, 0, 0, 0
 results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
                                          'Velocity [px/s]', 'Error [Vel]'])
 results_evaluate = pd.DataFrame(columns=['Mean Feat Detected', 'Error [Mean Feat Detected]',
@@ -127,7 +127,7 @@ while True:
                                                          'Velocity [px/s]', 'Error [Vel]'])
                 save_parameters = pd.DataFrame(columns=['Min Thresh', 'Min Distance', 'Max Distance',
                                                         'Ini Feature', 'End Feature'])
-            finish_e, finish_t, track_c, eval_c, crt_set, difference = False, False, False, False, False, []
+            finish_e, finish_t, track_c, eval_c, crt_set, difference, relation = False, False, False, False, False, [], []
             tab_features, n_features, tr_features, rms_errors, tot_dist, mean_dist, mean_vel = [], [], [], [], [], [], []
             window['_TIN_'].update('-- : -- : --')
             window['_TFI_'].update('-- : -- : --')
@@ -209,20 +209,22 @@ while True:
         elif len(image) == 0 and i == 0:
             eval_c = False
             continue
-
         window['_NEX_'].update(exp)
         window['_NIM_'].update(name)
         window['_CIM_'].update(i)
-
         # features_, ima_out = Chg.features_img(image, v_thresh)
-        features_, ima_out, difference, ima_diff = Chg.features_img(image, v_thresh, i, difference, ima_diff)
-        if i > 10 and ctr_set is False:
+        features_, ima_out, difference, relation, ima_diff = Chg.features_img(image, v_thresh, i, difference,
+                                                                              relation, ima_diff)
+        if i > 9 and ctr_set is False:
             difference_ = np.array(difference)
+            relation_ = np.array(relation)
             score_eval = np.median(difference_)
+            diff_eval = np.median(relation_)
+            print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 10 and ctr_set and score_eval >= 0.80:
+        if i > 9 and ctr_set and score_eval >= 0.80 and diff_eval > 0.01:
             sg.Popup('Result', ['Parasites have not been found .... '])
-            finish_ = True
+            finish_e = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
         n_features.append(features_.shape[0])
         tab_features, feat_track = Chg.find_seq_feat(i, features_, tab_features, d_max, d_min)
@@ -288,20 +290,22 @@ while True:
         elif len(image) == 0 and i == 0:
             eval_c = False
             continue
-
         window['_NEX_'].update(exp)
         window['_NIM_'].update(name)
         window['_CIM_'].update(i)
         window['_MES_'].update('Tracking is running')
 
-        features_, ima_out, difference, ima_diff = Chg.features_img(image, v_thresh, i, difference, ima_diff)
+        features_, ima_out, difference, relation, ima_diff = Chg.features_img(image, v_thresh, i, difference,
+                                                                              relation, ima_diff)
         tab_features = Chg.find_track_feat(i, features_, tab_features, d_max, d_min)
         if i > 10 and ctr_set is False:
             difference_ = np.array(difference)
+            relation_ = np.array(relation)
             score_eval = np.median(difference_)
-            print(f'----------> score {score_eval}')
+            diff_eval = np.median(relation_)
+            print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 10 and ctr_set and score_eval < 0.80:
+        if i > 9 and ctr_set and score_eval < 0.80 and diff_eval > 0.01:
             print('this......' + str(tab_features.shape[0]))
             feat_tracking = tab_features[ini_feat:end_feat, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
@@ -309,9 +313,9 @@ while True:
             tot_dist.append(np.array(dists))
             mean_dist.append(mean_d)
             Chg.save_image_out(ima_out, path_des, name)
-        elif i > 10 and ctr_set and score_eval >= 0.80:
+        elif i > 9 and ctr_set and score_eval >= 0.80:
             sg.Popup('Result', ['Parasites have not been found .... '])
-            finish_ = True
+            finish_t = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
 
     if track_press:
