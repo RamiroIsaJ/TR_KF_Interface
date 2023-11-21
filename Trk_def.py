@@ -6,6 +6,7 @@ import os
 import pandas as pd
 from skimage import morphology
 from skimage.metrics import structural_similarity
+# print(cv2.__version__)
 
 
 def f_sorted(files_, id_sys):
@@ -79,22 +80,22 @@ def bytes_(img, m, n):
 
 def preprocessing(img):
     image_gray_ = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    clh = cv2.createCLAHE(clipLimit=5)
+    clh = cv2.createCLAHE(clipLimit=6.0, tileGridSize=(10, 10))
     clh_img = clh.apply(image_gray_)
-    blurred = cv2.GaussianBlur(clh_img, (5, 5), 0)
-    return clh_img, blurred
+    # blurred = cv2.GaussianBlur(clh_img, (3, 5), 0)
+    return clh_img
 
 
 def show_features(img, features_):
     for i in features_:
         x, y = i.ravel()
         cv2.circle(img, (x, y), 3, (0, 0, 255), -1)
-
     return img
 
 
-def features_img(img, v_th, ide, difference, ima_res):
-    ima_gray, final_ima = preprocessing(img)
+def features_img(img, v_th, ide, difference, relation, ima_res):
+    ima_gray = preprocessing(img)
+    m, n = ima_gray.shape
     if ide == 0:
         ima_res, diff = np.copy(ima_gray), np.copy(ima_gray)
     else:
@@ -102,14 +103,21 @@ def features_img(img, v_th, ide, difference, ima_res):
         difference.append(score)
         ima_res = np.copy(ima_gray)
         diff = (diff * 255).astype(np.uint8)
-    thresh = cv2.threshold(diff, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
+        thresh_diff = cv2.threshold(diff, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
+        values = np.sum(thresh_diff > np.min(thresh_diff.ravel()))
+        relation.append(values / (m*n))
+    thresh = cv2.threshold(ima_gray, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
+    arr = thresh > 0
+    thresh1 = morphology.remove_small_objects(arr, min_size=180, connectivity=1).astype(np.uint8)
+    thresh1 = thresh1.astype(np.uint8)
+    thresh2 = morphology.remove_small_objects(arr, min_size=10, connectivity=1).astype(np.uint8)
+    thresh2 = thresh2.astype(np.uint8)
+    thresh_f = thresh2 - thresh1
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    binary = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=3)
+    binary = cv2.morphologyEx(thresh_f, cv2.MORPH_CLOSE, kernel, iterations=1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
     binary = cv2.morphologyEx(binary, cv2.MORPH_DILATE, kernel, iterations=1)
-    arr = binary > 0
-    markers = morphology.remove_small_objects(arr, min_size=50, connectivity=1).astype(np.uint8)
-    markers = markers.astype(np.uint8)
-    contours = cv2.findContours(markers, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]
     features_ = []
     for c in contours:
@@ -119,7 +127,7 @@ def features_img(img, v_th, ide, difference, ima_res):
         features_.append((cx, cy))
     features_ = np.asarray(sorted(features_, key=lambda k: [k[0], k[1]]))
     frame = show_features(img, features_)
-    return features_, frame, difference, ima_res
+    return features_, frame, difference, relation, ima_res
 
 
 def distance(x, y):
@@ -194,7 +202,6 @@ def tracking_feat(frame, tracker, f_track, delta):
     std_dist = np.round(np.std(np.array(move_dist)), 4)
     mean_vel = np.round(np.mean(np.array(move_dist) / delta), 4)
     std_vel = np.round(np.std(np.array(move_dist) / delta), 4)
-
     return frame, r_mse, move_dist, mean_dist, std_dist, mean_vel, std_vel
 
 
@@ -207,7 +214,6 @@ def outliers(data):
     for i in data['Values']:
         if i > upper_tail or i < lower_tail:
             data['Values'] = data['Values'].replace(i, np.median(data['Values']))
-
     return np.round(np.mean(data['Values']), 4), np.round(np.std(data['Values']), 4)
 
 
