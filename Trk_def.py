@@ -165,10 +165,10 @@ def find_seq_feat(k, features_, tab_feat, max_v, min_v):
 
 
 def find_track_feat(k, features_, tab_feat, max_v, min_v):
-    if k == 0 :
+    if k == 1:
         tab_feat = np.append(features_, features_, axis=1)
         tab_feat = np.append(tab_feat, np.ones((len(features_), 2)), axis=1)
-    elif k == 10:
+    elif k == 9:
         tab_feat = sort_features(tab_feat, features_, max_v, min_v)
         idx = np.where((tab_feat[:, 4] == 0) & (tab_feat[:, 5] > 5))
         tab_feat = np.delete(tab_feat, idx, 0)
@@ -231,3 +231,4 @@ def save_csv_file(results_, path_des_, id_):
     print('----------------------------------------------')
     print('..... Save data in CSV file successfully .....')
     print('----------------------------------------------')
+    
