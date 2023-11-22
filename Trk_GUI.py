@@ -298,14 +298,17 @@ while True:
         features_, ima_out, difference, relation, ima_diff = Chg.features_img(image, v_thresh, i, difference,
                                                                               relation, ima_diff)
         tab_features = Chg.find_track_feat(i, features_, tab_features, d_max, d_min)
-        if i > 10 and ctr_set is False:
+        if i > 9 and ctr_set is False:
             difference_ = np.array(difference)
             relation_ = np.array(relation)
             score_eval = np.median(difference_)
             diff_eval = np.median(relation_)
             print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 9 and ctr_set and score_eval < 0.80 and diff_eval > 0.01:
+        if i > 9 and ctr_set and score_eval >= 0.80 and diff_eval > 0.01:
+            sg.Popup('Result', ['Parasites have not been found .... '])
+            finish_e = True
+        elif i > 9 and ctr_set and score_eval < 0.80:
             print('this......' + str(tab_features.shape[0]))
             feat_tracking = tab_features[ini_feat:end_feat, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
@@ -313,9 +316,6 @@ while True:
             tot_dist.append(np.array(dists))
             mean_dist.append(mean_d)
             Chg.save_image_out(ima_out, path_des, name)
-        elif i > 9 and ctr_set and score_eval >= 0.80:
-            sg.Popup('Result', ['Parasites have not been found .... '])
-            finish_t = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
 
     if track_press:
