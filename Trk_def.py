@@ -231,4 +231,3 @@ def save_csv_file(results_, path_des_, id_):
     print('----------------------------------------------')
     print('..... Save data in CSV file successfully .....')
     print('----------------------------------------------')
-    
