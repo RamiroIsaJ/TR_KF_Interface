@@ -65,6 +65,35 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
     return filenames, image_, exp, name_i
 
 
+def save_image_video(filename, id_sys):
+    symbol = '\\' if id_sys == 0 else '/'
+    cap = cv2.VideoCapture(filename)
+    path = filename.split(symbol)
+    exp, name_i = path[len(path) - 2], path[len(path) - 1]
+    cad, path_des = len(path) - 1, path[0]
+    print(path, exp, name_i)
+    print(cad, path_des)
+    '''
+    for p in range(1, cad):
+        path_des += symbol + path_des[p]
+    if not cap.isOpened():
+        error = True
+    else:
+        ide = 1
+        error = False
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if ret:
+                name = name_i + '_' + str(ide)
+                save_image_out(frame, path_des, name)
+                ide += 1
+            else:
+                break
+        cap.release()
+    '''
+
+    return 0
+
 def update_dir(path):
     path_s = path.split('/')
     cad, path_f = len(path_s), path_s[0]

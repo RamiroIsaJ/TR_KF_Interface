@@ -33,17 +33,19 @@ layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_"), sg.Checkbox('*.mov'
 
 layout3 = [[sg.Text('Min Thresh:', size=(10, 1)), sg.InputText('100', key='_ITH_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Max-Distance:', size=(12, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
+            sg.Text('Max-Distance:', size=(11, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
            [sg.Text('Ini-Feature:', size=(10, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Min-Distance:', size=(12, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
+            sg.Text('Min-Distance:', size=(11, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
            [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Delta t:', size=(12, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))]]
+            sg.Text('Delta t:', size=(11, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))]]
 
-layout4 = [[sg.Text('Source : ', size=(10, 1)), sg.InputText(size=(30, 1), key='_ORI_'),
-            sg.FolderBrowse(visible=True, key='_FOL_'), sg.FileBrowse(visible=False, key='_FIL_')],
-           [sg.Text('Destiny: ', size=(10, 1)), sg.InputText(size=(30, 1), key='_DES_'), sg.FolderBrowse()]]
+layout4 = [[sg.Text('Source : ', size=(10, 1), key='_F_', visible=True),
+            sg.InputText(size=(38, 1), key='_ORI_', visible=True), sg.FolderBrowse(visible=True, key='_FOL_'),
+            sg.Text('Source : ', size=(10, 1), key='_FI_', visible=False), sg.InputText(size=(38, 1), key='_ORF_', visible=False),
+            sg.FileBrowse(visible=False, key='_FIL_')],
+           [sg.Text('Destiny: ', size=(10, 1)), sg.InputText(size=(38, 1), key='_DES_'), sg.FolderBrowse()]]
 
 layout5 = [[sg.Text('Dist thresh:', size=(11, 1)), sg.InputText('150', key='_DTH_', size=(5, 1))],
            [sg.Text('Frames skip:', size=(11, 1)), sg.InputText('20', key='_FSK_', size=(5, 1))],
@@ -149,36 +151,52 @@ while True:
         window['_IN1_'].update(False)
         window['_IN2_'].update(False)
         window['_IN3_'].update(False)
+        window['_F_'].update(visible=False)
+        window['_ORI_'].update(visible=False)
         window['_FOL_'].update(visible=False)
+        window['_FI_'].update(visible=True)
+        window['_ORF_'].update(visible=True)
         window['_FIL_'].update(visible=True)
 
     if values['_IN1_']:
         type_i = "*.jpg"
         window['_IN2_'].update(False)
         window['_IN3_'].update(False)
+        window['_F_'].update(visible=True)
+        window['_ORI_'].update(visible=True)
         window['_FOL_'].update(visible=True)
         window['_FIL_'].update(visible=False)
+        window['_ORF_'].update(visible=False)
+        window['_FI_'].update(visible=False)
 
     if values['_IN2_']:
         type_i = "*.png"
         window['_IN1_'].update(False)
         window['_IN3_'].update(False)
+        window['_F_'].update(visible=True)
+        window['_ORI_'].update(visible=True)
         window['_FOL_'].update(visible=True)
         window['_FIL_'].update(visible=False)
+        window['_ORF_'].update(visible=False)
+        window['_FI_'].update(visible=False)
 
     if values['_IN3_']:
         type_i = "*.tiff"
         window['_IN1_'].update(False)
         window['_IN2_'].update(False)
+        window['_F_'].update(visible=True)
+        window['_ORI_'].update(visible=True)
         window['_FOL_'].update(visible=True)
         window['_FIL_'].update(visible=False)
+        window['_ORF_'].update(visible=False)
+        window['_FI_'].update(visible=False)
 
     if event == 'Pause':
         eval_c, track_c, eval_pres, track_press = False, False, False, False
 
     if event == 'Tracking':
         print('SELECT TRACKING')
-        if values['_SYS_'] is True:
+        if values['_SYS_']:
             id_sys = 0
             path_org = Chg.update_dir(values['_ORI_']) + "\\"
             path_org = r'{}'.format(path_org)
@@ -202,7 +220,7 @@ while True:
 
     if event == 'Evaluate':
         print('SELECT EVALUATE')
-        if values['_SYS_'] is True:
+        if values['_SYS_']:
             id_sys = 0
             path_org = Chg.update_dir(values['_ORI_']) + "\\"
             path_org = r'{}'.format(path_org)
@@ -222,6 +240,8 @@ while True:
 
     if eval_c:
         print('EVALUATE PROCESS')
+        Chg.save_image_video(path_org, id_sys)
+        '''
         v_thresh = int(values['_ITH_'])
         d_max, d_min = int(values['_MAD_']), int(values['_MID_'])
         i += 1
@@ -258,6 +278,7 @@ while True:
         window['_NFD_'].update(features_.shape[0])
         window['_NFT_'].update(feat_track.shape[0])
         window['_RPC_'].update(rep)
+        '''
 
     if eval_press:
         print('EVALUATE RESULTS')
