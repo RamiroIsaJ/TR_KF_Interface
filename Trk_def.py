@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import cv2
 import glob
@@ -65,17 +67,12 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
     return filenames, image_, exp, name_i
 
 
-def save_image_video(filename, id_sys):
+def save_image_video(path_ori, path_des, id_sys):
     symbol = '\\' if id_sys == 0 else '/'
-    cap = cv2.VideoCapture(filename)
-    path = filename.split(symbol)
-    exp, name_i = path[len(path) - 2], path[len(path) - 1]
-    cad, path_des = len(path) - 1, path[0]
-    print(path, exp, name_i)
-    print(cad, path_des)
-    '''
-    for p in range(1, cad):
-        path_des += symbol + path_des[p]
+    path_ori = os.path.abspath(os.path.expanduser(path_ori))
+    cap = cv2.VideoCapture(path_ori)
+    path = path_ori.split(symbol)
+    name_i = path[len(path) - 1].split('.')[0]
     if not cap.isOpened():
         error = True
     else:
@@ -85,14 +82,14 @@ def save_image_video(filename, id_sys):
             ret, frame = cap.read()
             if ret:
                 name = name_i + '_' + str(ide)
+                print(f'Frame:  {name} -----> Successfully')
                 save_image_out(frame, path_des, name)
                 ide += 1
             else:
                 break
         cap.release()
-    '''
+    return error
 
-    return 0
 
 def update_dir(path):
     path_s = path.split('/')

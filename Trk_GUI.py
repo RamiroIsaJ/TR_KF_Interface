@@ -88,8 +88,8 @@ col_2 = [[sg.Frame('Operative System: ', layout1, title_color='Blue'),
           sg.Frame('Type image: ', layout2, title_color='Blue'), sg.Frame('Settings: ', layout3, title_color='Blue')],
          [sg.Frame('Directories: ', layout4, title_color='Blue', key='_DIR_'),
           sg.Frame('Tracker: ', layout5, title_color='Blue')],
-         [sg.T(" ", size=(15, 1)), sg.Button('Evaluate', size=(8, 1)), sg.Button('Tracking', size=(8, 1)),
-          sg.Button('Pause', size=(8, 1)), sg.Button('Finish', size=(8, 1))],
+         [sg.T(" ", size=(15, 1)), sg.Button('Convert', size=(8, 1)), sg.Button('Evaluate', size=(8, 1)),
+          sg.Button('Tracking', size=(8, 1)), sg.Button('Pause', size=(8, 1)), sg.Button('Finish', size=(8, 1))],
          [sg.Frame('', layout6)], [sg.Frame('', layout7)],
          [sg.Frame('Eval Results:', layout8, title_color='Blue'), sg.Text(''),
           sg.Frame('Tracking Results:', layout9, title_color='Blue')]]
@@ -102,8 +102,9 @@ window['_IMA_'].update(data=Chg.bytes_(img, m1, n1))
 # ---------------------------------------------------------------------
 eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, False, False, False, False, False, False
 filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
-tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation = [], [], [], [], None, 0, []
+tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation, convert_ = [], [], [], [], None, 0, [], False
 i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat, diff_eval = -1, 0, None, 0, 0, 0, 0, 0, 0, 0
+finish_c = False
 results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
                                          'Velocity [px/s]', 'Error [Vel]'])
 results_evaluate = pd.DataFrame(columns=['Mean Feat Detected', 'Error [Mean Feat Detected]',
@@ -121,8 +122,12 @@ while True:
     if event is None or event == sg.WIN_CLOSED:
         break
 
-    if event == 'Finish' or finish_t or finish_e:
+    if event == 'Finish' or finish_t or finish_e or finish_c:
         print('FINISH')
+        if convert_:
+            window['_MES_'].update('Process is completed')
+            convert_, finish_c = False, False
+
         if finish_e or finish_t or track_c or eval_c:
             window['_IMA_'].update(data=Chg.bytes_(img, m1, n1))
             i, filenames = -1, []
@@ -138,8 +143,10 @@ while True:
                                                          'Velocity [px/s]', 'Error [Vel]'])
                 save_parameters = pd.DataFrame(columns=['Min Thresh', 'Min Distance', 'Max Distance',
                                                         'Ini Feature', 'End Feature'])
-            finish_e, finish_t, track_c, eval_c, crt_set, difference, relation = False, False, False, False, False, [], []
-            tab_features, n_features, tr_features, rms_errors, tot_dist, mean_dist, mean_vel = [], [], [], [], [], [], []
+            eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, False, False, False, False, False, False
+            filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
+            tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation, convert_ = [], [], [], [], None, 0, [], False
+            i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat, diff_eval = -1, 0, None, 0, 0, 0, 0, 0, 0, 0
             window['_TIN_'].update('-- : -- : --')
             window['_TFI_'].update('-- : -- : --')
             window['_NEX_'].update('')
@@ -194,6 +201,35 @@ while True:
     if event == 'Pause':
         eval_c, track_c, eval_pres, track_press = False, False, False, False
 
+    if event == 'Convert':
+        print('CONVERT VIDEO TO FRAMES')
+        if values['_SYS_']:
+            id_sys = 0
+            path_org = Chg.update_dir(values['_ORF_']) + "\\"
+            path_org = r'{}'.format(path_org)
+            path_des = Chg.update_dir(values['_DES_']) + "\\"
+            path_des = r'{}'.format(path_des)
+        else:
+            id_sys = 1
+            path_org, path_des = values['_ORF_']+'/', values['_DES_']+'/'
+        # ------------------------------------------------------------------
+        if len(path_org) > 1 and finish_e is False:
+            now_time = now.strftime("%H : %M : %S")
+            window['_TIN_'].update(now_time)
+            window['_MES_'].update('Convert video is running')
+            convert_ = True
+        else:
+            sg.Popup('Error', ['Information not valid or Finish process...'])
+
+    if convert_:
+        print('CONVERT PROCESS')
+        error = Chg.save_image_video(path_org, path_des, id_sys)
+        if not error:
+            sg.Popup('Convert video to frames successfully...')
+            finish_c = True
+        else:
+            sg.Popup('Error in conversion video to frames...')
+
     if event == 'Tracking':
         print('SELECT TRACKING')
         if values['_SYS_']:
@@ -240,8 +276,6 @@ while True:
 
     if eval_c:
         print('EVALUATE PROCESS')
-        Chg.save_image_video(path_org, id_sys)
-        '''
         v_thresh = int(values['_ITH_'])
         d_max, d_min = int(values['_MAD_']), int(values['_MID_'])
         i += 1
@@ -278,7 +312,6 @@ while True:
         window['_NFD_'].update(features_.shape[0])
         window['_NFT_'].update(feat_track.shape[0])
         window['_RPC_'].update(rep)
-        '''
 
     if eval_press:
         print('EVALUATE RESULTS')
