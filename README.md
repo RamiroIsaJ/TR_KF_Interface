@@ -1,6 +1,6 @@
 # TR_KF Interface
 TR_KF by **Multi Tracking objects with Kalman Filter** is a GUI Interface programmed in *PYTHON* using PySimpleGUI for object detection and tracking process in a sequence of images.
-This is a test version 0.3.1
+This is a test version 1.2.5
 
 ![image info](./src/ima1.png)
 
