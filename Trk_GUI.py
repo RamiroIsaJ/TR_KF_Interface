@@ -27,20 +27,22 @@ img = np.ones((m1, n1, 1), np.uint8)*255
 layout1 = [[sg.Radio('Windows', "RADIO1", enable_events=True, default=True, key='_SYS_')],
            [sg.Radio('Linux', "RADIO1", enable_events=True, key='_LIN_')], [sg.Text('')]]
 
-layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_")], [sg.Checkbox('*.png', default=False, key="_IN2_")],
-           [sg.Checkbox('*.tiff', default=False, key="_IN3_")]]
+layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_"), sg.Checkbox('*.mov', key="_IN4_")],
+           [sg.Checkbox('*.png', default=False, key="_IN2_")],
+           [sg.Checkbox('*.tiff', default=False, key="_IN3_")], ]
 
-layout3 = [[sg.Text('Min Thresh:', size=(12, 1)), sg.InputText('100', key='_ITH_', size=(5, 1)),
+layout3 = [[sg.Text('Min Thresh:', size=(10, 1)), sg.InputText('100', key='_ITH_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Max-Distance:', size=(12, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
-           [sg.Text('Ini-Feature:', size=(12, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
+           [sg.Text('Ini-Feature:', size=(10, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Min-Distance:', size=(12, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
-           [sg.Text('End-Feature:', size=(12, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
+           [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Delta t:', size=(12, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))]]
 
-layout4 = [[sg.Text('Source : ', size=(10, 1)), sg.InputText(size=(30, 1), key='_ORI_'), sg.FolderBrowse()],
+layout4 = [[sg.Text('Source : ', size=(10, 1)), sg.InputText(size=(30, 1), key='_ORI_'),
+            sg.FolderBrowse(visible=True, key='_FOL_'), sg.FileBrowse(visible=False, key='_FIL_')],
            [sg.Text('Destiny: ', size=(10, 1)), sg.InputText(size=(30, 1), key='_DES_'), sg.FolderBrowse()]]
 
 layout5 = [[sg.Text('Dist thresh:', size=(11, 1)), sg.InputText('150', key='_DTH_', size=(5, 1))],
@@ -82,7 +84,8 @@ v_image = [sg.Image(filename='', key="_IMA_")]
 col_1 = [[sg.Frame('', [v_image])]]
 col_2 = [[sg.Frame('Operative System: ', layout1, title_color='Blue'),
           sg.Frame('Type image: ', layout2, title_color='Blue'), sg.Frame('Settings: ', layout3, title_color='Blue')],
-         [sg.Frame('Directories: ', layout4, title_color='Blue'), sg.Frame('Tracker: ', layout5, title_color='Blue')],
+         [sg.Frame('Directories: ', layout4, title_color='Blue', key='_DIR_'),
+          sg.Frame('Tracker: ', layout5, title_color='Blue')],
          [sg.T(" ", size=(15, 1)), sg.Button('Evaluate', size=(8, 1)), sg.Button('Tracking', size=(8, 1)),
           sg.Button('Pause', size=(8, 1)), sg.Button('Finish', size=(8, 1))],
          [sg.Frame('', layout6)], [sg.Frame('', layout7)],
@@ -142,6 +145,34 @@ while True:
             window['_CIM_'].update('')
             window['_MES_'].update('Process is completed')
 
+    if values['_IN4_']:
+        window['_IN1_'].update(False)
+        window['_IN2_'].update(False)
+        window['_IN3_'].update(False)
+        window['_FOL_'].update(visible=False)
+        window['_FIL_'].update(visible=True)
+
+    if values['_IN1_']:
+        type_i = "*.jpg"
+        window['_IN2_'].update(False)
+        window['_IN3_'].update(False)
+        window['_FOL_'].update(visible=True)
+        window['_FIL_'].update(visible=False)
+
+    if values['_IN2_']:
+        type_i = "*.png"
+        window['_IN1_'].update(False)
+        window['_IN3_'].update(False)
+        window['_FOL_'].update(visible=True)
+        window['_FIL_'].update(visible=False)
+
+    if values['_IN3_']:
+        type_i = "*.tiff"
+        window['_IN1_'].update(False)
+        window['_IN2_'].update(False)
+        window['_FOL_'].update(visible=True)
+        window['_FIL_'].update(visible=False)
+
     if event == 'Pause':
         eval_c, track_c, eval_pres, track_press = False, False, False, False
 
@@ -156,13 +187,6 @@ while True:
         else:
             id_sys = 1
             path_org, path_des = values['_ORI_'] + '/', values['_DES_'] + '/'
-            # -----------------------------------------------------------------
-        if values['_IN2_']:
-            type_i = "*.png"
-        elif values['_IN3_']:
-            type_i = "*.tiff"
-        else:
-            type_i = "*.jpg"
             # ------------------------------------------------------------------
         if len(path_org) > 1 and finish_t is False:
             now_time = now.strftime("%H : %M : %S")
@@ -187,13 +211,6 @@ while True:
         else:
             id_sys = 1
             path_org, path_des = values['_ORI_']+'/', values['_DES_']+'/'
-        # -----------------------------------------------------------------
-        if values['_IN2_']:
-            type_i = "*.png"
-        elif values['_IN3_']:
-            type_i = "*.tiff"
-        else:
-            type_i = "*.jpg"
         # ------------------------------------------------------------------
         if len(path_org) > 1 and finish_e is False:
             now_time = now.strftime("%H : %M : %S")
