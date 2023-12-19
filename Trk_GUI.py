@@ -1,3 +1,9 @@
+
+
+
+
+
+
 # Ramiro Isa-Jara, ramiro.isaj@gmail.com
 # Interface for tracking features from image sequences
 
@@ -222,7 +228,7 @@ while True:
             diff_eval = np.median(relation_)
             print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 9 and ctr_set and score_eval >= 0.80 and diff_eval > 0.01:
+        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
@@ -305,10 +311,10 @@ while True:
             diff_eval = np.median(relation_)
             print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 9 and ctr_set and score_eval >= 0.80 and diff_eval > 0.01:
+        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
-        elif i > 9 and ctr_set and score_eval < 0.80:
+        elif i > 9 and ctr_set and score_eval < 0.85:
             print('this......' + str(tab_features.shape[0]))
             feat_tracking = tab_features[ini_feat:end_feat, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
@@ -322,6 +328,10 @@ while True:
         print('TRACK RESULTS')
         n_errors = np.array(rms_errors)
         t_dist = np.cumsum(np.array(mean_dist[2:]))  # change 1 by 2
+        if len(t_dist) < 1:
+            sg.Popup('Result', ['Parameters must be adjusted .... '])
+            finish_e = True
+            continue
         total_dist_g = np.round(t_dist[-1], 4)
         d_std = np.std(np.array(mean_dist[2:]))
         m_dist = np.mean(np.array(mean_dist[2:]))

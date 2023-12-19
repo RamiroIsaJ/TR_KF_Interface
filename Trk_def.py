@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import glob
@@ -123,9 +122,10 @@ def features_img(img, v_th, ide, difference, relation, ima_res):
     features_ = []
     for c in contours:
         mts = cv2.moments(c)
-        cx = int(mts["m10"] / mts["m00"])
-        cy = int(mts["m01"] / mts["m00"])
-        features_.append((cx, cy))
+        if mts["m00"] > 0:
+            cx = int(mts["m10"] / mts["m00"])
+            cy = int(mts["m01"] / mts["m00"])
+            features_.append((cx, cy))
     features_ = np.asarray(sorted(features_, key=lambda k: [k[0], k[1]]))
     frame = show_features(img, features_)
     return features_, frame, difference, relation, ima_res
