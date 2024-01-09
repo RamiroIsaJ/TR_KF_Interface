@@ -302,6 +302,7 @@ while True:
         if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
+            continue
         window['_IMA_'].update(data=Chg.bytes_(ima_out, m1, n1))
         n_features.append(features_.shape[0])
         tab_features, feat_track = Chg.find_seq_feat(i, features_, tab_features, d_max, d_min)
@@ -385,6 +386,7 @@ while True:
         if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
+            continue
         elif i > 9 and ctr_set and score_eval < 0.85:
             print('this......' + str(tab_features.shape[0]))
             feat_tracking = tab_features[ini_feat:end_feat, 2:4]
