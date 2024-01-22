@@ -387,7 +387,7 @@ while True:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
             continue
-        elif i > 9 and ctr_set and score_eval < 0.85:
+        if i > 9 and ctr_set and score_eval < 0.85:
             print('this......' + str(tab_features.shape[0]))
             feat_tracking = tab_features[ini_feat:end_feat, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
