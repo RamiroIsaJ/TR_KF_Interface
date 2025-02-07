@@ -1,12 +1,5 @@
-
-
-
-
-
-
 # Ramiro Isa-Jara, ramiro.isaj@gmail.com
 # Interface for tracking features from image sequences
-
 import PySimpleGUI as sg
 import numpy as np
 import pandas as pd
@@ -39,7 +32,11 @@ layout3 = [[sg.Text('Min Thresh:', size=(10, 1)), sg.InputText('100', key='_ITH_
             sg.Text('Min-Distance:', size=(11, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
            [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Delta t:', size=(11, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))]]
+            sg.Text('Delta t:', size=(11, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))],
+           [sg.Text('Frames-Cam:', size=(10, 1)), sg.InputText('30', key='_FPS_', size=(5, 1)),
+            sg.Text('', size=(2, 1)),
+            sg.Text('Frames-Save:', size=(11, 1)), sg.InputText('3', key='_FTS_', size=(5, 1))],
+           ]
 
 layout4 = [[sg.Text('Source : ', size=(10, 1), key='_F_', visible=True),
             sg.InputText(size=(38, 1), key='_ORI_', visible=True), sg.FolderBrowse(visible=True, key='_FOL_'),
@@ -115,12 +112,12 @@ save_parameters = pd.DataFrame(columns=['Min Thresh', 'Min Distance', 'Max Dista
 while True:
     event, values = window.read(timeout=10)
     window.Refresh()
+    if event is None or event == sg.WIN_CLOSED:
+        break
+
     now = datetime.now()
     now_time = now.strftime("%H : %M : %S")
     window['_TAC_'].update(now_time)
-
-    if event is None or event == sg.WIN_CLOSED:
-        break
 
     if event == 'Finish' or finish_t or finish_e or finish_c:
         print('FINISH')
@@ -223,7 +220,9 @@ while True:
 
     if convert_:
         print('CONVERT PROCESS')
-        error = Chg.save_image_video(path_org, path_des, id_sys)
+        frames_cam = int(values['_FPS_'])
+        frames_save = int(values['_FTS_'])
+        error = Chg.save_image_video(path_org, path_des, id_sys, frames_cam, frames_save)
         if not error:
             sg.Popup('Convert video to frames successfully...')
             finish_c = True

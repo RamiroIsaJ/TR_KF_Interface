@@ -67,7 +67,8 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
     return filenames, image_, exp, name_i
 
 
-def save_image_video(path_ori, path_des, id_sys):
+def save_image_video(path_ori, path_des, id_sys, frames_cam, frames_save):
+    parameter = int(frames_cam / frames_save)
     symbol = '\\' if id_sys == 0 else '/'
     path_ori = os.path.abspath(os.path.expanduser(path_ori))
     cap = cv2.VideoCapture(path_ori)
@@ -76,14 +77,16 @@ def save_image_video(path_ori, path_des, id_sys):
     if not cap.isOpened():
         error = True
     else:
-        ide = 1
+        ide, ident = 0, 0
         error = False
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
-                name = name_i + '_' + str(ide)
-                print(f'Frame:  {name} -----> Successfully')
-                save_image_out(frame, path_des, name)
+                if ide % parameter == 0:
+                    name = name_i + '_' + str(ident)
+                    print(f'Frame:  {ident} -----> Successfully')
+                    save_image_out(frame, path_des, name)
+                    ident += 1
                 ide += 1
             else:
                 break
