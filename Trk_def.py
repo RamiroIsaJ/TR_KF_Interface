@@ -171,7 +171,7 @@ def sort_features(last_f, curr_f, max_v, min_v):
         for kd in range(curr_f.shape[0]):
             dist = distance(xy, curr_f[int(kd), :])
             if max_v > dist > min_v:
-                idx = kd
+                idx = np.copy(kd)
                 break
         if idx is not None:
             last_f[i, 2:4] = curr_f[idx, :]

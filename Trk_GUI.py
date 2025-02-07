@@ -27,10 +27,10 @@ layout2 = [[sg.Checkbox('*.jpg', default=True, key="_IN1_"), sg.Checkbox('*.mov'
 layout3 = [[sg.Text('Min Thresh:', size=(10, 1)), sg.InputText('100', key='_ITH_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Max-Distance:', size=(11, 1)), sg.InputText('30', key='_MAD_', size=(5, 1))],
-           [sg.Text('Ini-Feature:', size=(10, 1)), sg.InputText('50', key='_INF_', size=(5, 1)),
-            sg.Text('', size=(2, 1)),
+           [sg.Text('Ini-Feature:', size=(10, 1)), sg.InputText('0', key='_INF_', size=(5, 1)),
+           sg.Text('', size=(2, 1)),
             sg.Text('Min-Distance:', size=(11, 1)), sg.InputText('2', key='_MID_', size=(5, 1))],
-           [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('250', key='_FNF_', size=(5, 1)),
+           [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('0', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Delta t:', size=(11, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))],
            [sg.Text('Frames-Cam:', size=(10, 1)), sg.InputText('30', key='_FPS_', size=(5, 1)),
@@ -388,7 +388,7 @@ while True:
             continue
         if i > 9 and ctr_set and score_eval < 0.85:
             print('this......' + str(tab_features.shape[0]))
-            feat_tracking = tab_features[ini_feat:end_feat, 2:4]
+            feat_tracking = tab_features[:, 2:4]
             ima_out, error, dists, mean_d, std_d, mean_v, std_v = Chg.tracking_feat(image, tracker, feat_tracking, delta)
             rms_errors.append(error)
             tot_dist.append(np.array(dists))
