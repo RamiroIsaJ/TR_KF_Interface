@@ -16,4 +16,4 @@ Error is the measure of the Kalman filter for the detection process.
 
 ![image info](./src/ima2.png)
 
-TR_KF Interface will be presented in a **scientific paper**.
+TR_KF Interface has been presented in paper https://www.sciencedirect.com/science/article/abs/pii/S0026265X24009822
