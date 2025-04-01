@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from skimage import morphology
 from skimage.metrics import structural_similarity
+import PySimpleGUI as sg
 # print(cv2.__version__)
 
 
@@ -67,8 +68,7 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
     return filenames, image_, exp, name_i
 
 
-def save_image_video(path_ori, path_des, id_sys, frames_cam, frames_save):
-    parameter = int(frames_cam / frames_save)
+def save_image_video(path_ori, path_des, id_sys, parameter):
     symbol = '\\' if id_sys == 0 else '/'
     path_ori = os.path.abspath(os.path.expanduser(path_ori))
     cap = cv2.VideoCapture(path_ori)
@@ -82,6 +82,9 @@ def save_image_video(path_ori, path_des, id_sys, frames_cam, frames_save):
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
+                if ide <= 1000:
+                    sg.OneLineProgressMeter('Convert video: ', ide, 1000, 'single')
+                    time.sleep(0.1)
                 if ide % parameter == 0:
                     name = name_i + '_' + str(ident)
                     print(f'Frame:  {ident} -----> Successfully')

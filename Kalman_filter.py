@@ -17,21 +17,21 @@ class KalmanF(object):
         if self.method != 'velocity':
             self.U = 1
 
-        self.A = np.mat([[1, self.dt, 0, 0], [0, 1, 0, 0], [0, 0, 1, self.dt], [0, 0, 0, 1]])
+        self.A = np.asmatrix(np.array([[1, self.dt, 0, 0], [0, 1, 0, 0], [0, 0, 1, self.dt], [0, 0, 0, 1]]))
 
-        self.B = np.mat([[self.dt**2/2], [self.dt], [self.dt**2/2], [self.dt]])
+        self.B = np.asmatrix(np.array([[self.dt**2/2], [self.dt], [self.dt**2/2], [self.dt]]))
 
-        self.H = np.mat([[1, 0, 0, 0], [0, 0, 1, 0]])
+        self.H = np.asmatrix(np.array([[1, 0, 0, 0], [0, 0, 1, 0]]))
 
-        self.P = np.mat(self.state_var * np.identity(self.A.shape[0]))
-        self.R = np.mat(self.val_var * np.identity(self.H.shape[0]))
+        self.P = np.asmatrix(np.array(self.state_var * np.identity(self.A.shape[0])))
+        self.R = np.asmatrix(np.array(self.val_var * np.identity(self.H.shape[0])))
 
-        self.Q = np.mat([[self.dt**4/4, self.dt**3/2, 0, 0],
+        self.Q = np.asmatrix(np.array([[self.dt**4/4, self.dt**3/2, 0, 0],
                          [self.dt**3/2, self.dt**2, 0, 0],
                          [0, 0, self.dt**4/4, self.dt**3/2],
-                         [0, 0, self.dt**3/2, self.dt**2]])
+                         [0, 0, self.dt**3/2, self.dt**2]]))
 
-        self.state = np.mat([[0], [1], [0], [1]])
+        self.state = np.asmatrix(np.array([[0], [1], [0], [1]]))
         self.error = self.P
 
     def predict(self):

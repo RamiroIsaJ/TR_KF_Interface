@@ -33,9 +33,9 @@ layout3 = [[sg.Text('Min Thresh:', size=(10, 1)), sg.InputText('100', key='_ITH_
            [sg.Text('End-Feature:', size=(10, 1)), sg.InputText('0', key='_FNF_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
             sg.Text('Delta t:', size=(11, 1)), sg.InputText('0.70', key='_DET_', size=(5, 1))],
-           [sg.Text('Frames-Cam:', size=(10, 1)), sg.InputText('30', key='_FPS_', size=(5, 1)),
+           [sg.Text('Frames-Cam:', size=(10, 1)), sg.InputText('25', key='_FPS_', size=(5, 1)),
             sg.Text('', size=(2, 1)),
-            sg.Text('Frames-Save:', size=(11, 1)), sg.InputText('3', key='_FTS_', size=(5, 1))],
+            sg.Text('Frames-Save:', size=(11, 1)), sg.InputText('1', key='_FTS_', size=(5, 1))],
            ]
 
 layout4 = [[sg.Text('Source : ', size=(10, 1), key='_F_', visible=True),
@@ -101,6 +101,7 @@ eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, F
 filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
 tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation, convert_ = [], [], [], [], None, 0, [], False
 i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat, diff_eval = -1, 0, None, 0, 0, 0, 0, 0, 0, 0
+parameter_save = None
 finish_c = False
 results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
                                          'Velocity [px/s]', 'Error [Vel]'])
@@ -215,14 +216,15 @@ while True:
             window['_TIN_'].update(now_time)
             window['_MES_'].update('Convert video is running')
             convert_ = True
+            frames_cam = int(values['_FPS_'])
+            frames_save = int(values['_FTS_'])
+            parameter_save = int(frames_cam / frames_save)
         else:
             sg.Popup('Error', ['Information not valid or Finish process...'])
 
     if convert_:
         print('CONVERT PROCESS')
-        frames_cam = int(values['_FPS_'])
-        frames_save = int(values['_FTS_'])
-        error = Chg.save_image_video(path_org, path_des, id_sys, frames_cam, frames_save)
+        error = Chg.save_image_video(path_org, path_des, id_sys, parameter_save)
         if not error:
             sg.Popup('Convert video to frames successfully...')
             finish_c = True
@@ -298,7 +300,7 @@ while True:
             diff_eval = np.median(relation_)
             print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
+        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.2:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
             continue
@@ -382,7 +384,7 @@ while True:
             diff_eval = np.median(relation_)
             print(f'-------> score {score_eval} ---------> relation {diff_eval}')
             ctr_set = True
-        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.01:
+        if i > 9 and ctr_set and score_eval >= 0.85 or diff_eval > 0.2:
             sg.Popup('Result', ['Parasites have not been found .... '])
             finish_e = True
             continue
@@ -452,10 +454,18 @@ while True:
         new_row_t = pd.DataFrame.from_records([{'Total Distance [px]': total_dist_g, 'Mean Distance [px]': mean_dist_model,
                                                 'Error [Dist]': std_dist_model, 'Velocity [px/s]': mean_velo_model,
                                                 'Error [Vel]': std_velo_model}])
-        results_tracking = pd.concat([results_tracking, new_row_t], ignore_index=True)
+        if results_tracking.empty:
+            results_tracking = new_row_t.copy()
+        else:
+            results_tracking = pd.concat([results_tracking, new_row_t], ignore_index=True)
+
         new_row_p = pd.DataFrame.from_records([{'Min Thresh': v_thresh, 'Min Distance': d_min, 'Max Distance': d_max,
                                                 'Ini Feature': ini_feat, 'End Feature': end_feat}])
-        save_parameters = pd.concat([save_parameters, new_row_p], ignore_index=True)
+        if save_parameters.empty:
+            save_parameters = new_row_p.copy()
+        else:
+            save_parameters = pd.concat([save_parameters, new_row_p], ignore_index=True)
+
         plt.show()
         track_press, finish_t = False, True
 
