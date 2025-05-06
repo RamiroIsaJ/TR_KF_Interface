@@ -1,5 +1,5 @@
 import time
-
+import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import glob
@@ -9,6 +9,8 @@ import pandas as pd
 from skimage import morphology
 from skimage.metrics import structural_similarity
 import PySimpleGUI as sg
+from skimage.filters import threshold_otsu
+from skimage.filters import threshold_multiotsu
 # print(cv2.__version__)
 
 
@@ -68,7 +70,7 @@ def load_image_i(orig, i, type_, filenames, exp, id_sys):
     return filenames, image_, exp, name_i
 
 
-def save_image_video(path_ori, path_des, id_sys, parameter):
+def save_image_video(path_ori, path_des, id_sys, parameter, total_frames):
     symbol = '\\' if id_sys == 0 else '/'
     path_ori = os.path.abspath(os.path.expanduser(path_ori))
     cap = cv2.VideoCapture(path_ori)
@@ -82,9 +84,9 @@ def save_image_video(path_ori, path_des, id_sys, parameter):
         while cap.isOpened():
             ret, frame = cap.read()
             if ret:
-                if ide <= 1000:
-                    sg.OneLineProgressMeter('Convert video: ', ide, 1000, 'single')
-                    time.sleep(0.1)
+                if ide <= total_frames:
+                    sg.OneLineProgressMeter('Convert video: ', ide, total_frames, 'single')
+                    time.sleep(0.01)
                 if ide % parameter == 0:
                     name = name_i + '_' + str(ident)
                     print(f'Frame:  {ident} -----> Successfully')
@@ -125,6 +127,39 @@ def show_features(img, features_):
     return img
 
 
+def verify_contour(contour):
+    _, _, w, h = cv2.boundingRect(contour)
+    condition = np.round(min(w, h) / max(w, h), 2)
+    if condition > 0.4:
+        return True
+    else:
+        return False
+
+
+def calculate_contour(img):
+    contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    valid_contour, error_contour = [], []
+    for c in contours:
+        if verify_contour(c):
+            valid_contour.append(c)
+        else:
+            error_contour.append(c)
+    return valid_contour, error_contour
+
+
+def delete_regions(binary_, e_contours_):
+    binary_nn = np.zeros_like(binary_)
+    for c in e_contours_:
+        cv2.fillPoly(binary_nn, pts=[c], color=(255, 255, 255))
+    return binary_nn
+
+
+def validate_features(binary_):
+    v_contours, e_contours = calculate_contour(binary_)
+    binary_nn_ = delete_regions(binary_, v_contours)
+    return binary_nn_
+
+
 def features_img(img, v_th, ide, difference, relation, ima_res):
     ima_gray = preprocessing(img)
     m, n = ima_gray.shape
@@ -135,21 +170,21 @@ def features_img(img, v_th, ide, difference, relation, ima_res):
         difference.append(score)
         ima_res = np.copy(ima_gray)
         diff = (diff * 255).astype(np.uint8)
-        thresh_diff = cv2.threshold(diff, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
+        thresh_diff = cv2.threshold(diff, v_th, 255, cv2.THRESH_BINARY_INV)[1]
         values = np.sum(thresh_diff > np.min(thresh_diff.ravel()))
         relation.append(values / (m*n))
-    thresh = cv2.threshold(ima_gray, v_th, 255, cv2.THRESH_TOZERO_INV)[1]
+
+    thresh = cv2.threshold(ima_gray, v_th, 255, cv2.THRESH_BINARY_INV)[1]
     arr = thresh > 0
-    thresh1 = morphology.remove_small_objects(arr, min_size=180, connectivity=1).astype(np.uint8)
+    thresh1 = morphology.remove_small_objects(arr, min_size=500, connectivity=1).astype(np.uint8)
     thresh1 = thresh1.astype(np.uint8)
-    thresh2 = morphology.remove_small_objects(arr, min_size=10, connectivity=1).astype(np.uint8)
+    thresh2 = morphology.remove_small_objects(arr, min_size=50, connectivity=1).astype(np.uint8)
     thresh2 = thresh2.astype(np.uint8)
     thresh_f = thresh2 - thresh1
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    binary = cv2.morphologyEx(thresh_f, cv2.MORPH_CLOSE, kernel, iterations=1)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-    binary = cv2.morphologyEx(binary, cv2.MORPH_DILATE, kernel, iterations=1)
-    contours = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    binary = cv2.morphologyEx(thresh_f, cv2.MORPH_CLOSE, kernel, iterations=2)
+    binary_v = validate_features(binary)
+    contours = cv2.findContours(binary_v, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contours = contours[0] if len(contours) == 2 else contours[1]
     features_ = []
     for c in contours:

@@ -101,7 +101,7 @@ eval_c, finish_t, finish_e, eval_press, track_c, track_press, ctr_set = False, F
 filenames, exp, path_org, type_i, tab_features, n_features, tr_features, rms_errors = [], [], [], [], [], [], [], []
 tot_dist, mean_dist, path_des, difference, ima_diff, score_eval, relation, convert_ = [], [], [], [], None, 0, [], False
 i, id_sys, tracker, delta, v_thresh, d_min, d_max, ini_feat, end_feat, diff_eval = -1, 0, None, 0, 0, 0, 0, 0, 0, 0
-parameter_save = None
+parameter_save, total_frames = None, None
 finish_c = False
 results_tracking = pd.DataFrame(columns=['Total Distance [px]', 'Mean Distance [px]', 'Error [Dist]',
                                          'Velocity [px/s]', 'Error [Vel]'])
@@ -218,13 +218,14 @@ while True:
             convert_ = True
             frames_cam = int(values['_FPS_'])
             frames_save = int(values['_FTS_'])
+            total_frames = int(frames_cam * 60)
             parameter_save = int(frames_cam / frames_save)
         else:
             sg.Popup('Error', ['Information not valid or Finish process...'])
 
     if convert_:
         print('CONVERT PROCESS')
-        error = Chg.save_image_video(path_org, path_des, id_sys, parameter_save)
+        error = Chg.save_image_video(path_org, path_des, id_sys, parameter_save, total_frames)
         if not error:
             sg.Popup('Convert video to frames successfully...')
             finish_c = True
